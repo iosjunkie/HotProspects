@@ -25,12 +25,12 @@ struct ContentView: View {
                     Image(systemName: "person.3")
                     Text("Everyone")
                 }
-            ProspectsView(filter: .none)
+            ProspectsView(filter: .contacted)
                 .tabItem {
                     Image(systemName: "checkmark.circle")
                     Text("Contacted")
                 }
-            ProspectsView(filter: .none)
+            ProspectsView(filter: .uncontacted)
                 .tabItem {
                     Image(systemName: "questionmark.diamond")
                     Text("Uncontacted")
