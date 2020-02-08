@@ -14,6 +14,10 @@ enum FilterType {
     case none, contacted, uncontacted
 }
 
+enum SortType {
+    case name, recent
+}
+
 struct ProspectsView: View {
     let filter: FilterType
     var title: String {
@@ -40,16 +44,25 @@ struct ProspectsView: View {
     
     @EnvironmentObject var prospects: Prospects
     @State private var isShowingScanner = false
+    @State private var isShowingSort = false
+    @State private var sortMode = SortType.name
 
     var body: some View {
         NavigationView {
             List {
-                ForEach(filteredProspects) { prospect in
-                    VStack(alignment: .leading) {
-                        Text(prospect.name)
-                            .font(.headline)
-                        Text(prospect.emailAddress)
-                            .foregroundColor(.secondary)
+                ForEach(sortMode == .name ? filteredProspects.sorted {
+                    $0.name > $1.name
+                    } : filteredProspects.sorted {
+                    $0.createdAt > $1.createdAt
+                }) { prospect in
+                    HStack {
+                        Image(systemName: prospect.isContacted ? "person.crop.circle.badge.checkmark" : "person.crop.circle")
+                        VStack(alignment: .leading) {
+                            Text(prospect.name)
+                                .font(.headline)
+                            Text(prospect.emailAddress)
+                                .foregroundColor(.secondary)
+                        }
                     }
                     .contextMenu {
                         Button(prospect.isContacted ? "Mark Uncontacted" : "Mark Contacted" ) {
@@ -64,7 +77,12 @@ struct ProspectsView: View {
                 }
             }
                 .navigationBarTitle(title)
-                .navigationBarItems(trailing: Button(action: {
+            .navigationBarItems(leading: Button(action: {
+                    self.isShowingSort = true
+                }) {
+                Image(systemName: "line.horizontal.3.decrease.circle")
+                },
+                trailing: Button(action: {
                     self.isShowingScanner = true
                 }) {
                     Image(systemName: "qrcode.viewfinder")
@@ -73,6 +91,17 @@ struct ProspectsView: View {
         }
         .sheet(isPresented: $isShowingScanner) {
             CodeScannerView(codeTypes: [.qr], simulatedData: "Paul Hudson\npaul@hackingwithswift.com", completion: self.handleScan)
+        }
+        .actionSheet(isPresented: $isShowingSort) {
+            ActionSheet(title: Text("How do you want to sort it out?"), message: Text("Choose an option"), buttons: [
+                .default(Text("By Name"), action: {
+                    self.sortMode = .name
+                    self.isShowingSort = false
+                }), .default(Text("By Most Recent"), action: {
+                    self.sortMode = .recent
+                    self.isShowingSort = false
+                })])
+
         }
     }
     
@@ -89,7 +118,7 @@ struct ProspectsView: View {
             person.emailAddress = details[1]
 
             self.prospects.add(person)
-        case .failure(let error):
+        case .failure( _):
             print("Scanning failed")
         }
     }
